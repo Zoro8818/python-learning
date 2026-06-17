@@ -108,3 +108,4 @@ while count < 5:
         print(f"还剩: {5 - count}次")
 else:
     print("机会用完")
+
