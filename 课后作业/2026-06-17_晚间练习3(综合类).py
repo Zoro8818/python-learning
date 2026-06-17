@@ -208,7 +208,7 @@ students = {
     "小明": 45,
     "小红": 100
 }
-pass_count = 0
+pass_count = 0git status
 fail_count = 0
 for name, score in students.items():
     print(f"{name}：{score}")
