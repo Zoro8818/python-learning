@@ -40,7 +40,7 @@ print("无效客户数量:", invalid_count)
 product_text = " 苹果手机, 华为手机, , 小米耳机, 荣耀手机, , 平板电脑, 手机壳 "
 product_list = product_text.split(",")
 
-new_product_list = []
+phone_product_list = []
 valid_product_list = []
 invalid_count = 0
 
@@ -49,7 +49,7 @@ for product in product_list:
     if clean_list != "":
         valid_product_list.append(clean_list)
         if "手机" in clean_list:
-            new_product_list.append(clean_list)
+            phone_product_list.append(clean_list)
     else:
         invalid_count += 1
 
@@ -57,8 +57,8 @@ print("原始数据:", product_list)
 print("清洗后有效商品列表", valid_product_list)
 print("有效产品数量:", len(valid_product_list))
 print("无效产品数量:", invalid_count)
-print("包含手机的商品", new_product_list)
-print("包含手机的商品数量:", len(new_product_list))
+print("包含手机的商品", phone_product_list)
+print("包含手机的商品数量:", len(phone_product_list))
 #注释:# 输入：这一题的原始数据是product_text
 # 处理：用了 split 以","拆分原始数据为列表/ strip 去前后空格/for 遍历每个商品, if 判断清理后商品是否无效和"手机"是否在包含有效商品里/
 # append 包含"手机"的商品进新列表
@@ -86,7 +86,7 @@ print("包含手机的商品数量:", len(new_product_list))
 score_text = " 88, 59, , 76, 100, , 45, 60, 92 "
 score_list = score_text.split(",")
 
-new_score_list = []
+pass_score_list = []
 clean_list = []
 fail_count = 0
 invalid_count = 0
@@ -98,7 +98,7 @@ for score in score_list:
         clean_item = int(s)
         clean_list.append(clean_item)
         if clean_item >= 60:
-            new_score_list.append(clean_item)
+            pass_score_list.append(clean_item)
         else:
             fail_count += 1
     else:
@@ -108,8 +108,8 @@ print("原始数据:", score_list)
 print("清洗后分数列表:", clean_list)
 print("有效数量:", len(clean_list))
 print("无效数量:", invalid_count)
-print("及格分数列表:", new_score_list)
-print("及格人数:", len(new_score_list))
+print("及格分数列表:", pass_score_list)
+print("及格人数:", len(pass_score_list))
 print("不及格人数:", fail_count)
 
 #注释:# 输入：这一题的原始数据是score_text
