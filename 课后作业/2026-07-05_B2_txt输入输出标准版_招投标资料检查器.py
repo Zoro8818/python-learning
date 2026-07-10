@@ -54,7 +54,6 @@ for required_material in required_list:
     else:
         missing_list.append(required_material)
 
-# 6. 生成整改建议
 for missing_material in missing_list:
     if missing_material in key_required_list:
         key_missing_list.append(missing_material)
@@ -63,6 +62,7 @@ for submitted_material in submitted_list:
     if submitted_material not in required_list:
         extra_list.append(submitted_material)
 
+# 6. 生成整改建议
 for missing_material in missing_list:
     suggestion_list.append("请补交必备资料：" + missing_material)
 

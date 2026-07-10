@@ -37,6 +37,11 @@ for record in raw_record_list:
 
         if material_name == "" or submit_status == "" or is_required == "":
             invalid_count += 1
+        elif submit_status != "已提交" and submit_status != "缺失":
+            invalid_count += 1
+        elif is_required != "是" and is_required != "否":
+            invalid_count += 1
+
         else:
             if submit_status == "已提交":
                 submitted_material_list.append(material_name)
