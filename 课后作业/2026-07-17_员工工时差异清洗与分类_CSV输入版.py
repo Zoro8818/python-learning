@@ -1,3 +1,10 @@
+# 业务目标：清洗员工工时数据，计算实际工时与计划工时的差异。
+# 输入字段：员工姓名、计划工时、实际工时。
+# 核心计算：工时差异 = 实际工时 - 计划工时。
+# 分类口径：差异大于 0 为超出计划，等于 0 为按计划完成，
+#           小于 0 为未达到计划工时。
+# 输出结果：有效记录 cleaned CSV、工时统计、最高最低差异和 TXT 报告。
+
 input_file_path = r"D:\python-project\课后作业\input\employee_hours.csv"
 cleaned_file_path = r"D:\python-project\课后作业\output\employee_hours_cleaned.csv"
 report_file_path = r"D:\python-project\课后作业\output\employee_hours_report.txt"

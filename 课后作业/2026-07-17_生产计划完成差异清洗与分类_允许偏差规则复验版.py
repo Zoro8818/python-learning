@@ -1,13 +1,13 @@
-# 业务目标：清洗生产计划数据，计算完成差异并按完成情况分类。
+# 业务目标：复验生产计划允许偏差规则是否正确联动到分类和报告。
 # 输入字段：产品名称、计划数量、完成数量。
 # 核心计算：完成差异 = 完成数量 - 计划数量。
 # 分类口径：差异大于 0 为超额完成，等于 0 为按计划完成，
-#           小于 0 为未完成。
-# 输出结果：有效记录 cleaned CSV、差异统计、最高最低差异和 TXT 报告。
+#           -5 到 -1 为允许偏差内完成，小于 -5 为未完成。
+# 输出使用独立文件路径，避免覆盖原三分类版本的验证结果。
 
 input_file_path = r"D:\python-project\课后作业\input\production_plan.csv"
-cleaned_file_path = r"D:\python-project\课后作业\output\production_plan_cleaned.csv"
-report_file_path = r"D:\python-project\课后作业\output\production_plan_report.txt"
+cleaned_file_path = r"D:\python-project\课后作业\output\production_plan_allowed_deviation_cleaned.csv"
+report_file_path = r"D:\python-project\课后作业\output\production_plan_allowed_deviation_report.txt"
 
 raw_record_list = []
 
@@ -29,6 +29,7 @@ completion_difference_list = []       # 完成差异列表
 
 invalid_record_list = []
 invalid_reason_list = []
+allowed_deviation_product_list = []   # 允许偏差内完成产品列表
 
 over_completed_product_list = []      # 超额完成产品列表
 completed_as_planned_list = []        # 按计划完成产品列表
@@ -117,6 +118,9 @@ for record in raw_record_list:
             elif completion_difference == 0:
                 completed_as_planned_list.append(product_name)
 
+            elif completion_difference >= -5:
+                allowed_deviation_product_list.append(product_name)
+
             else:
                 unfinished_product_list.append(product_name)
 
@@ -134,6 +138,7 @@ for invalid_reason in invalid_reason_list:
 
 print("\n超额完成产品：", over_completed_product_list)
 print("按计划完成产品：", completed_as_planned_list)
+print("允许偏差内完成产品：", allowed_deviation_product_list)
 print("未完成产品：", unfinished_product_list)
 
 print("\n计划数量合计：", total_planned_quantity)
@@ -193,6 +198,11 @@ with open(report_file_path, "w", encoding="utf-8") as file:
         + "\n"
     )
     file.write(
+        "允许偏差内完成产品数量："
+        + str(len(allowed_deviation_product_list))
+        + "\n"
+    )
+    file.write(
         "未完成产品数量："
         + str(len(unfinished_product_list))
         + "\n"
@@ -236,6 +246,11 @@ with open(report_file_path, "w", encoding="utf-8") as file:
     file.write(
         "按计划完成产品："
         + str(completed_as_planned_list)
+        + "\n"
+    )
+    file.write(
+        "允许偏差内完成产品："
+        + str(allowed_deviation_product_list)
         + "\n"
     )
     file.write(
