@@ -1,0 +1,273 @@
+input_file = "D:/python-project/课后作业/input/warehouse_inventory_difference_review.csv"
+cleaned_file = "D:/python-project/课后作业/output/warehouse_inventory_difference_review_cleaned.csv"
+report_file = "D:/python-project/课后作业/output/warehouse_inventory_difference_review_report.txt"
+
+with open(input_file, "r", encoding="utf-8") as file:
+    csv_text = file.read()
+
+lines = csv_text.splitlines()
+
+raw_record_list = []
+
+for line in lines:
+    raw_record = line.strip()
+
+    if (
+        raw_record != ""
+        and raw_record != "盘点单号,盘点状态,复核状态,差异数量"
+    ):
+        raw_record_list.append(raw_record)
+
+# 有效、无效结果
+valid_record_list = []
+invalid_record_list = []
+invalid_reason_list = []
+
+# 有效记录分类
+major_difference_review_list = []       # 重大盘点差异复核列表
+waiting_inventory_list = []             # 等待盘点列表
+waiting_inventory_review_list = []      # 等待盘点复核列表
+difference_rectification_list = []      # 差异整改列表
+inventory_confirmation_list = []        # 盘点确认列表
+
+for raw_record in raw_record_list:
+
+    parts = raw_record.split(",")
+
+    if len(parts) != 4:
+        invalid_record_list.append(raw_record)
+        invalid_reason_list.append("字段数量错误，原始记录：" + raw_record)
+        continue
+
+    inventory_sheet_number = parts[0].strip()
+    inventory_status = parts[1].strip()
+    review_status = parts[2].strip()
+    difference_quantity_text = parts[3].strip()
+
+    if (
+        inventory_sheet_number == ""
+        or inventory_status == ""
+        or review_status == ""
+        or difference_quantity_text == ""
+    ):
+        invalid_record_list.append(raw_record)
+        invalid_reason_list.append("字段为空, 原始记录: " + raw_record)
+        continue
+
+    if (
+        inventory_status != "未盘点"
+        and inventory_status != "已盘点"
+    ):
+        invalid_record_list.append(raw_record)
+        invalid_reason_list.append("盘点状态不合法, 原始记录: " + raw_record)
+        continue
+
+    if (
+        review_status != "待复核"
+        and review_status != "通过"
+        and review_status != "不通过"
+    ):
+        invalid_record_list.append(raw_record)
+        invalid_reason_list.append("复核状态不合法, 原始记录: " + raw_record)
+        continue
+
+    if not difference_quantity_text.removeprefix("-").isdigit():
+        invalid_record_list.append(raw_record)
+        invalid_reason_list.append("差异数量不是合法数字, 原始记录: " + raw_record)
+        continue
+
+    difference_quantity = int(difference_quantity_text)
+
+    if (
+        difference_quantity < 0
+        or difference_quantity > 1000
+    ):
+        invalid_record_list.append(raw_record)
+        invalid_reason_list.append("差异数量必须是0—1000 的整数, 原始记录: " + raw_record)
+        continue
+
+    if (
+        inventory_status == "未盘点"
+        and review_status != "待复核"
+    ):
+        invalid_record_list.append(raw_record)
+        invalid_reason_list.append("无效状态组合, 原始记录: " + raw_record)
+        continue
+
+    if (
+        inventory_status == "未盘点"
+        and difference_quantity != 0
+    ):
+        invalid_record_list.append(raw_record)
+        invalid_reason_list.append("未盘点时差异数量必须等于 0, 原始记录: " + raw_record)
+        continue
+
+    clean_record = (
+        inventory_sheet_number
+        + ","
+        + inventory_status
+        + ","
+        + review_status
+        + ","
+        + str(difference_quantity)
+    )
+
+    valid_record_list.append(clean_record)
+
+    if difference_quantity > 100:
+        major_difference_review_list.append(inventory_sheet_number)
+    elif (
+        inventory_status == "未盘点"
+        and review_status == "待复核"
+    ):
+        waiting_inventory_list.append(inventory_sheet_number)
+    elif (
+        inventory_status == "已盘点"
+        and review_status == "待复核"
+    ):
+        waiting_inventory_review_list.append(inventory_sheet_number)
+    elif (
+        inventory_status == "已盘点"
+        and review_status == "不通过"
+    ):
+        difference_rectification_list.append(inventory_sheet_number)
+    else:
+        inventory_confirmation_list.append(inventory_sheet_number)
+
+raw_record_count = len(raw_record_list)
+valid_record_count = len(valid_record_list)
+invalid_record_count = len(invalid_record_list)
+
+major_difference_review_count = len(major_difference_review_list)
+waiting_inventory_count = len(waiting_inventory_list)
+waiting_inventory_review_count = len(waiting_inventory_review_list)
+difference_rectification_count = len(difference_rectification_list)
+inventory_confirmation_count = len(inventory_confirmation_list)
+
+review_conclusion = ""
+
+if invalid_record_count > 0:
+    review_conclusion = "当前审核结果仅供参考，需修正后重新审核"
+elif major_difference_review_count > 0:
+    review_conclusion = "存在重大盘点差异，需要优先复核"
+elif difference_rectification_count > 0:
+    review_conclusion = "存在未通过复核的盘点单，需要整改"
+elif waiting_inventory_count > 0 or waiting_inventory_review_count > 0:
+    review_conclusion = "仍有盘点流程未完成"
+else:
+    review_conclusion = "盘点记录均已确认完成"
+
+print("仓库盘点差异复核审核报告")
+print("=" * 40)
+
+print("原始记录数量:", raw_record_count)
+print("有效记录数量:", valid_record_count)
+print("无效记录数量:", invalid_record_count)
+
+print()
+
+print("重大盘点差异复核数量:", major_difference_review_count)
+print("等待盘点数量:", waiting_inventory_count)
+print("等待盘点复核数量:", waiting_inventory_review_count)
+print("差异整改数量:", difference_rectification_count)
+print("盘点确认数量:", inventory_confirmation_count)
+
+print()
+
+print("重大盘点差异复核盘点单:", major_difference_review_list)
+print("等待盘点盘点单:", waiting_inventory_list)
+print("等待盘点复核盘点单:", waiting_inventory_review_list)
+print("差异整改盘点单:", difference_rectification_list)
+print("盘点确认盘点单:", inventory_confirmation_list)
+
+print()
+
+print("无效记录及原因:")
+
+for invalid_reason in invalid_reason_list:
+    print(invalid_reason)
+
+print()
+
+print("最终审核结论:")
+print(review_conclusion)
+
+with open(cleaned_file, "w", encoding="utf-8") as file:
+    file.write("盘点单号,盘点状态,复核状态,差异数量\n")
+
+    for valid_record in valid_record_list:
+        file.write(valid_record + "\n")
+
+with open(report_file, "w", encoding="utf-8") as file:
+    file.write("仓库盘点差异复核审核报告\n")
+    file.write("=" * 40 + "\n")
+
+    file.write("原始记录数量: " + str(raw_record_count) + "\n")
+    file.write("有效记录数量: " + str(valid_record_count) + "\n")
+    file.write("无效记录数量: " + str(invalid_record_count) + "\n")
+
+    file.write("\n")
+
+    file.write(
+        "重大盘点差异复核数量: "
+        + str(major_difference_review_count)
+        + "\n"
+    )
+    file.write(
+        "等待盘点数量: "
+        + str(waiting_inventory_count)
+        + "\n"
+    )
+    file.write(
+        "等待盘点复核数量: "
+        + str(waiting_inventory_review_count)
+        + "\n"
+    )
+    file.write(
+        "差异整改数量: "
+        + str(difference_rectification_count)
+        + "\n"
+    )
+    file.write(
+        "盘点确认数量: "
+        + str(inventory_confirmation_count)
+        + "\n"
+    )
+
+    file.write("\n")
+
+    file.write(
+        "重大盘点差异复核盘点单: "
+        + str(major_difference_review_list)
+        + "\n"
+    )
+    file.write(
+        "等待盘点盘点单: "
+        + str(waiting_inventory_list)
+        + "\n"
+    )
+    file.write(
+        "等待盘点复核盘点单: "
+        + str(waiting_inventory_review_list)
+        + "\n"
+    )
+    file.write(
+        "差异整改盘点单: "
+        + str(difference_rectification_list)
+        + "\n"
+    )
+    file.write(
+        "盘点确认盘点单: "
+        + str(inventory_confirmation_list)
+        + "\n"
+    )
+
+    file.write("\n")
+    file.write("无效记录及原因:\n")
+
+    for invalid_reason in invalid_reason_list:
+        file.write(invalid_reason + "\n")
+
+    file.write("\n")
+    file.write("最终审核结论:\n")
+    file.write(review_conclusion + "\n")

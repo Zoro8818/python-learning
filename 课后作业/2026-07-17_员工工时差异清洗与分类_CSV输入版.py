@@ -1,0 +1,267 @@
+# 业务目标：清洗员工工时数据，计算实际工时与计划工时的差异。
+# 输入字段：员工姓名、计划工时、实际工时。
+# 核心计算：工时差异 = 实际工时 - 计划工时。
+# 分类口径：差异大于 0 为超出计划，等于 0 为按计划完成，
+#           小于 0 为未达到计划工时。
+# 输出结果：有效记录 cleaned CSV、工时统计、最高最低差异和 TXT 报告。
+
+input_file_path = r"D:\python-project\课后作业\input\employee_hours.csv"
+cleaned_file_path = r"D:\python-project\课后作业\output\employee_hours_cleaned.csv"
+report_file_path = r"D:\python-project\课后作业\output\employee_hours_report.txt"
+
+raw_record_list = []
+
+with open(input_file_path, "r", encoding="utf-8") as file:
+    content = file.read()
+
+lines = content.splitlines()
+
+for line in lines:
+    clean_line = line.strip()
+
+    if clean_line != "" and clean_line != "员工姓名,计划工时,实际工时":
+        raw_record_list.append(clean_line)
+
+employee_name_list = []            # 有效员工姓名列表
+planned_hours_list = []            # 有效计划工时列表
+actual_hours_list = []             # 有效实际工时列表
+hours_difference_list = []         # 工时差异列表
+
+invalid_record_list = []
+invalid_reason_list = []
+cleaned_record_list = []
+
+overtime_employee_list = []        # 超出计划工时员工列表
+on_plan_employee_list = []         # 按计划完成员工列表
+under_hours_employee_list = []     # 未达到计划工时员工列表
+
+total_planned_hours = 0
+total_actual_hours = 0
+total_hours_difference = 0
+
+highest_hours_difference = 0
+highest_difference_employee = ""
+
+lowest_hours_difference = 0
+lowest_difference_employee = ""
+
+for record in raw_record_list:
+    parts = record.split(",")
+
+    if len(parts) != 3:
+        invalid_record_list.append(record)
+        invalid_reason_list.append("字段数量错误，原始记录：" + record)
+
+    else:
+        employee_name = parts[0].strip()
+        planned_hours_text = parts[1].strip()
+        actual_hours_text = parts[2].strip()
+
+        if (
+            employee_name == ""
+            or planned_hours_text == ""
+            or actual_hours_text == ""
+        ):
+            invalid_record_list.append(record)
+            invalid_reason_list.append("字段为空，原始记录：" + record)
+
+        elif (
+            not planned_hours_text.replace(".", "", 1).isdigit()
+            or not actual_hours_text.replace(".", "", 1).isdigit()
+        ):
+            invalid_record_list.append(record)
+            invalid_reason_list.append("工时不是数字，原始记录：" + record)
+
+        else:
+            planned_hours = float(planned_hours_text)
+            actual_hours = float(actual_hours_text)
+            hours_difference = actual_hours - planned_hours
+
+            employee_name_list.append(employee_name)
+            planned_hours_list.append(planned_hours)
+            actual_hours_list.append(actual_hours)
+            hours_difference_list.append(hours_difference)
+
+            if len(hours_difference_list) == 1:
+                highest_hours_difference = hours_difference
+                highest_difference_employee = employee_name
+
+                lowest_hours_difference = hours_difference
+                lowest_difference_employee = employee_name
+
+            else:
+                if hours_difference > highest_hours_difference:
+                    highest_hours_difference = hours_difference
+                    highest_difference_employee = employee_name
+
+                if hours_difference < lowest_hours_difference:
+                    lowest_hours_difference = hours_difference
+                    lowest_difference_employee = employee_name
+
+            total_planned_hours += planned_hours
+            total_actual_hours += actual_hours
+            total_hours_difference += hours_difference
+
+            cleaned_record_list.append(
+                employee_name
+                + ","
+                + str(planned_hours)
+                + ","
+                + str(actual_hours)
+                + ","
+                + str(hours_difference)
+            )
+            if hours_difference > 0:
+                overtime_employee_list.append(employee_name)
+            elif hours_difference == 0:
+                on_plan_employee_list.append(employee_name)
+            else:
+                under_hours_employee_list.append(employee_name)
+
+print("原始记录数量：", len(raw_record_list))
+print("有效记录数量：", len(employee_name_list))
+print("无效记录数量：", len(invalid_record_list))
+
+print("\n无效记录：")
+for invalid_record in invalid_record_list:
+    print(invalid_record)
+
+print("\n无效原因：")
+for invalid_reason in invalid_reason_list:
+    print(invalid_reason)
+
+print("\n超出计划工时员工：", overtime_employee_list)
+print("按计划完成员工：", on_plan_employee_list)
+print("未达到计划工时员工：", under_hours_employee_list)
+
+print("\n计划工时合计：", total_planned_hours)
+print("实际工时合计：", total_actual_hours)
+print("工时差异合计：", total_hours_difference)
+
+print("\n清洗后的有效记录：")
+for cleaned_record in cleaned_record_list:
+    print(cleaned_record)
+
+if len(employee_name_list) == 0:
+    print("\n没有有效数据，无法计算最大和最小工时差异")
+
+else:
+    print("\n最大工时差异员工：", highest_difference_employee)
+    print("最大工时差异：", highest_hours_difference)
+
+    print("最小工时差异员工：", lowest_difference_employee)
+    print("最小工时差异：", lowest_hours_difference)
+
+with open(cleaned_file_path, "w", encoding="gbk") as file:
+    file.write("员工姓名,计划工时,实际工时,工时差异\n")
+
+    for cleaned_record in cleaned_record_list:
+        file.write(cleaned_record + "\n")
+
+if len(invalid_record_list) > 0:
+    business_conclusion = (
+        "存在无效数据，当前员工工时统计仅供参考，需要修正后重新核算"
+    )
+
+elif len(cleaned_record_list) == 0:
+    business_conclusion = "没有有效数据，无法进行员工工时分析"
+
+elif total_hours_difference > 0:
+    business_conclusion = "有效员工实际工时整体超出计划工时"
+
+elif total_hours_difference == 0:
+    business_conclusion = "有效员工实际工时整体与计划工时一致"
+
+else:
+    business_conclusion = "有效员工实际工时整体未达到计划工时"
+
+with open(report_file_path, "w", encoding="utf-8") as file:
+    file.write("员工工时差异清洗与分类报告\n")
+    file.write("==============================\n")
+
+    file.write("原始记录数量：" + str(len(raw_record_list)) + "\n")
+    file.write("有效记录数量：" + str(len(cleaned_record_list)) + "\n")
+    file.write("无效记录数量：" + str(len(invalid_record_list)) + "\n")
+
+    file.write("\n分类统计\n")
+    file.write("------------------------------\n")
+    file.write(
+        "超出计划工时员工数量："
+        + str(len(overtime_employee_list))
+        + "\n"
+    )
+    file.write(
+        "按计划完成员工数量："
+        + str(len(on_plan_employee_list))
+        + "\n"
+    )
+    file.write(
+        "未达到计划工时员工数量："
+        + str(len(under_hours_employee_list))
+        + "\n"
+    )
+
+    file.write("\n工时合计\n")
+    file.write("------------------------------\n")
+    file.write("计划工时合计：" + str(total_planned_hours) + "\n")
+    file.write("实际工时合计：" + str(total_actual_hours) + "\n")
+    file.write("工时差异合计：" + str(total_hours_difference) + "\n")
+
+    file.write("\n最大和最小工时差异\n")
+    file.write("------------------------------\n")
+
+    if len(cleaned_record_list) == 0:
+        file.write("没有有效数据，无法计算最大和最小工时差异\n")
+
+    else:
+        file.write(
+            "最大工时差异员工："
+            + highest_difference_employee
+            + "，差异："
+            + str(highest_hours_difference)
+            + "\n"
+        )
+
+        file.write(
+            "最小工时差异员工："
+            + lowest_difference_employee
+            + "，差异："
+            + str(lowest_hours_difference)
+            + "\n"
+        )
+
+    file.write("\n员工分类明细\n")
+    file.write("------------------------------\n")
+    file.write(
+        "超出计划工时员工："
+        + str(overtime_employee_list)
+        + "\n"
+    )
+    file.write(
+        "按计划完成员工："
+        + str(on_plan_employee_list)
+        + "\n"
+    )
+    file.write(
+        "未达到计划工时员工："
+        + str(under_hours_employee_list)
+        + "\n"
+    )
+
+    file.write("\n无效数据明细\n")
+    file.write("------------------------------\n")
+
+    if len(invalid_reason_list) == 0:
+        file.write("无\n")
+    else:
+        for invalid_reason in invalid_reason_list:
+            file.write(invalid_reason + "\n")
+
+    file.write("\n最终业务结论\n")
+    file.write("------------------------------\n")
+    file.write(business_conclusion + "\n")
+
+
+print("\ncleaned CSV 已生成：", cleaned_file_path)
+print("TXT 报告已生成：", report_file_path)
+print("最终业务结论：", business_conclusion)
